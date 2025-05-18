@@ -20,21 +20,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load environment variables
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://doggy-detective.vercel.app")
 FRONTEND_URLS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    os.getenv("FRONTEND_URL", "https://doggy-detective.vercel.app")
+    "https://localhost:5173",
+    "https://127.0.0.1:5173",
+    FRONTEND_URL
 ]
+
+# Add Vercel preview URLs if they exist
+if FRONTEND_URL and "vercel.app" in FRONTEND_URL:
+    # Add potential Vercel preview URLs
+    base_url = FRONTEND_URL.replace("https://", "").replace("http://", "").split(".")[0]
+    FRONTEND_URLS.extend([
+        f"https://{base_url}-*-*.vercel.app",  # Vercel preview URLs
+        f"https://{base_url}.vercel.app",      # Main deployment URL
+    ])
 
 app = FastAPI(title="Doggy Detective API")
 
-# Enable CORS
+# Enable CORS with more permissive configuration for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_URLS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 # Global variables for model
