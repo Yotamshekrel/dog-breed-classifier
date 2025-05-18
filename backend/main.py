@@ -18,7 +18,8 @@ app = FastAPI(title="Doggy Detective API")
 FRONTEND_URLS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    os.getenv("FRONTEND_URL", "https://doggy-detective.vercel.app")
+    os.getenv("FRONTEND_URL", "https://doggy-detective.vercel.app"),
+    "https://doggy-detective.vercel.app"  # Add your actual Vercel URL here
 ]
 
 app.add_middleware(
