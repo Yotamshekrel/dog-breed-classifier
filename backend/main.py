@@ -81,33 +81,73 @@ async def load_model():
 
 @app.get("/")
 async def root():
+    """Health check endpoint that also returns model status"""
     mem_used = None
+    model_loaded = model is not None
+    class_idx_loaded = class_idx is not None
+    
     if torch.cuda.is_available():
         mem_used = torch.cuda.memory_allocated() / 1024**2
+    
     return {
-        "message": "Dog Breed Classifier API is running",
+        "status": "running",
+        "model_loaded": model_loaded,
+        "class_idx_loaded": class_idx_loaded,
         "memory_usage_mb": mem_used
     }
 
 def get_predictions(image: Image.Image) -> list:
     try:
+        if model is None:
+            logger.error("Model not loaded")
+            raise RuntimeError("Model not initialized")
+            
+        if class_idx is None:
+            logger.error("Class index not loaded")
+            raise RuntimeError("Class labels not initialized")
+            
+        logger.info("Starting image preprocessing...")
+        # Log image details
+        logger.info(f"Input image size: {image.size}, mode: {image.mode}")
+        
         # Preprocess the image
         img_tensor = transform(image).unsqueeze(0)
+        logger.info(f"Preprocessed tensor shape: {img_tensor.shape}")
+        
         if torch.cuda.is_available():
             img_tensor = img_tensor.cuda()
+            logger.info("Moved tensor to GPU")
+            
+        logger.info("Image preprocessing complete")
         
         # Get model predictions
+        logger.info("Running model inference...")
         with torch.no_grad():
             outputs = model(img_tensor)
             probabilities = torch.nn.functional.softmax(outputs[0], dim=0)
+            logger.info(f"Raw output shape: {outputs.shape}, probability shape: {probabilities.shape}")
+        logger.info("Model inference complete")
         
         # Get all dog breed predictions
         breed_probs = []
+        logger.info("Processing breed probabilities...")
+        
+        # Log top 10 overall predictions for debugging
+        top_probs, top_indices = torch.topk(probabilities, 10)
+        logger.info("Top 10 overall predictions:")
+        for i, (prob, idx) in enumerate(zip(top_probs, top_indices)):
+            class_name = class_idx.get(str(idx.item()), "unknown")
+            logger.info(f"  {i+1}. Class {idx.item()} ({class_name}): {prob.item()*100:.2f}%")
+        
+        # Process dog breed predictions
         for i in range(151, 269):  # ImageNet dog breeds range
             prob = float(probabilities[i].item() * 100)
             if prob > 1.0:  # Only consider confident predictions
                 breed_name = class_idx[str(i)].split(',')[0].title()
                 breed_probs.append({"breed": breed_name, "confidence": prob})
+                logger.info(f"Found dog breed: {breed_name} with confidence: {prob:.2f}%")
+                
+        logger.info(f"Found {len(breed_probs)} breeds above threshold")
         
         # Sort by confidence and take top 5
         breed_probs.sort(key=lambda x: x["confidence"], reverse=True)
@@ -118,10 +158,15 @@ def get_predictions(image: Image.Image) -> list:
             total = sum(b["confidence"] for b in breed_probs)
             for breed in breed_probs:
                 breed["confidence"] = (breed["confidence"] / total) * 100
+                logger.info(f"Normalized {breed['breed']}: {breed['confidence']:.2f}%")
+        else:
+            logger.warning("No breeds met the confidence threshold")
         
+        logger.info(f"Final predictions: {breed_probs}")
         return breed_probs
     except Exception as e:
         logger.error(f"Error in predictions: {str(e)}")
+        logger.exception("Full prediction error traceback:")
         raise
 
 @app.post("/api/classify")
@@ -136,26 +181,33 @@ async def classify_image(file: UploadFile = File(...)):
     try:
         # Read and process the image
         contents = await file.read()
+        logger.info(f"Read file contents, size: {len(contents)} bytes")
+        
         image = Image.open(io.BytesIO(contents)).convert("RGB")
+        logger.info(f"Converted image to RGB, size: {image.size}")
         
         # Get predictions
+        logger.info("Starting prediction...")
         results = get_predictions(image)
+        logger.info(f"Raw prediction results: {results}")
         
         if not results:
             logger.warning("No dog breeds detected in the image")
-            raise HTTPException(status_code=400, detail="No dog detected in the image")
-        
+            raise HTTPException(status_code=400, detail="No dog breeds detected in the image")
+            
         # Clear memory
         del contents, image
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+            
+        response_data = {"results": results}
+        logger.info(f"Sending response: {response_data}")
+        return response_data
         
-        logger.info(f"Successfully classified image. Found breeds: {[r['breed'] for r in results]}")
-        return {"results": results}
-    
     except Exception as e:
         logger.error(f"Error processing image: {str(e)}")
+        logger.exception("Full error traceback:")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

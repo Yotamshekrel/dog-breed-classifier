@@ -115,16 +115,51 @@ function App() {
     formData.append('file', file)
 
     try {
+      console.log('Sending request to:', `${API_URL}/api/classify`)
       const response = await axios.post(`${API_URL}/api/classify`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       })
+      console.log('Received response:', response.data)
+      
+      // Validate response structure
+      if (!response.data || !Array.isArray(response.data.results)) {
+        console.error('Invalid response format:', response.data)
+        throw new Error('Invalid response format from server')
+      }
+      
+      // Validate results array
+      if (response.data.results.length === 0) {
+        throw new Error('No dog breeds detected')
+      }
+      
+      // Validate each result object
+      const validResults = response.data.results.every(
+        (result: any) => 
+          typeof result === 'object' &&
+          typeof result.breed === 'string' &&
+          typeof result.confidence === 'number'
+      )
+      
+      if (!validResults) {
+        console.error('Invalid result objects:', response.data.results)
+        throw new Error('Invalid breed prediction format')
+      }
+      
       setResults(response.data.results)
       setResultMessage(RESULT_MESSAGES[Math.floor(Math.random() * RESULT_MESSAGES.length)])
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ruff! Something went wrong. Try again! 🐾')
-      console.error(err)
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      })
+      setError(
+        err.response?.data?.detail || 
+        err.message || 
+        'Ruff! Something went wrong. Try again! 🐾'
+      )
     } finally {
       setLoading(false)
     }
