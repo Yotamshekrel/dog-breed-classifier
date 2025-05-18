@@ -3,7 +3,7 @@ import axios from 'axios'
 import { CloudArrowUpIcon, XMarkIcon, InformationCircleIcon, ShareIcon } from '@heroicons/react/24/outline'
 
 // Get API URL from environment variable with fallback for local development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 interface BreedResult {
   breed: string
