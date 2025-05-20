@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -7,29 +7,23 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
-  errorInfo: ErrorInfo | null
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-    errorInfo: null,
+  constructor(props: Props) {
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null }
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error }
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo)
-    this.setState({
-      error,
-      errorInfo,
-    })
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo)
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -39,28 +33,16 @@ class ErrorBoundary extends Component<Props, State> {
                 Oops! Something went wrong
               </h2>
               <p className="mt-2 text-center text-sm text-gray-600">
-                We apologize for the inconvenience. Please try refreshing the page.
+                {this.state.error?.message}
               </p>
             </div>
-            <div className="mt-8 bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">Error Details</h3>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <p className="font-mono bg-gray-100 p-4 rounded overflow-auto">
-                      {this.state.error?.toString()}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-                  >
-                    Refresh Page
-                  </button>
-                </div>
-              </div>
+            <div className="mt-8 space-y-6">
+              <button
+                onClick={() => window.location.reload()}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Refresh Page
+              </button>
             </div>
           </div>
         </div>
