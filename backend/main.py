@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from PIL import Image
@@ -29,7 +29,7 @@ app = FastAPI(title="Doggy Detective API")
 # Enable CORS with more permissive configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in development
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
@@ -170,7 +170,11 @@ def get_predictions(image: Image.Image) -> list:
         raise
 
 @app.post("/api/classify")
-async def classify_image(file: UploadFile = File(...)):
+async def classify_image(request: Request, file: UploadFile = File(...)):
+    # Log the origin of the request
+    origin = request.headers.get("origin", "unknown")
+    logger.info(f"Request received from origin: {origin}")
+    
     logger.info(f"Received image: {file.filename}")
     
     # Validate file type
@@ -208,7 +212,7 @@ async def classify_image(file: UploadFile = File(...)):
             torch.cuda.empty_cache()
             
         response_data = {"results": results}
-        logger.info(f"Sending response: {response_data}")
+        logger.info(f"Sending response to {origin}: {response_data}")
         return JSONResponse(content=response_data)
         
     except Exception as e:
