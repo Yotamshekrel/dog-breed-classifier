@@ -7,7 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 // Configure axios defaults
 axios.defaults.withCredentials = true
-axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*'
 
 // Create axios instance with specific configuration
 const api = axios.create({

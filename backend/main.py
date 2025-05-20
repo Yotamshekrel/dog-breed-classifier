@@ -21,16 +21,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load environment variables
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://dog-breed-classifier-*.vercel.app")
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://dog-breed-classifier-*.vercel.app,https://*.vercel.app,http://localhost:5173,https://localhost:5173").split(",")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://dog-breed-classifier-yotam-shekrels-projects.vercel.app")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://dog-breed-classifier-yotam-shekrels-projects.vercel.app,http://localhost:5173,https://localhost:5173").split(",")
 
 app = FastAPI(title="Doggy Detective API")
 
 # Enable CORS with more permissive configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,  # Use the environment variable instead of wildcard
-    allow_credentials=True,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,  # Changed to True to match frontend configuration
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -182,7 +182,12 @@ async def classify_image(request: Request, file: UploadFile = File(...)):
         logger.warning(f"Invalid file type: {file.content_type}")
         return JSONResponse(
             status_code=400,
-            content={"detail": "File must be an image"}
+            content={"detail": "File must be an image"},
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
         )
     
     try:
@@ -202,7 +207,12 @@ async def classify_image(request: Request, file: UploadFile = File(...)):
             logger.warning("No dog breeds detected in the image")
             return JSONResponse(
                 status_code=400,
-                content={"detail": "No dog breeds detected in the image"}
+                content={"detail": "No dog breeds detected in the image"},
+                headers={
+                    "Access-Control-Allow-Origin": origin,
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "*",
+                }
             )
             
         # Clear memory
@@ -213,14 +223,26 @@ async def classify_image(request: Request, file: UploadFile = File(...)):
             
         response_data = {"results": results}
         logger.info(f"Sending response to {origin}: {response_data}")
-        return JSONResponse(content=response_data)
+        return JSONResponse(
+            content=response_data,
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
         
     except Exception as e:
         logger.error(f"Error processing image: {str(e)}")
         logger.exception("Full error traceback:")
         return JSONResponse(
             status_code=500,
-            content={"detail": str(e)}
+            content={"detail": str(e)},
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
         )
 
 if __name__ == "__main__":
