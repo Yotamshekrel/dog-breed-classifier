@@ -39,7 +39,7 @@ describe('API Service', () => {
         temperament: 'Friendly',
         health: { score: 8, concerns: ['Hip dysplasia'] },
         training: { score: 9, tips: ['Positive reinforcement'] },
-        exercise: { score: 7, requirements: 'Daily walks'] },
+        exercise: { score: 7, requirements: 'Daily walks' },
         grooming: { score: 6, needs: ['Weekly brushing'] }
       }
     }
