@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { CloudArrowUpIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import React, { useState } from 'react'
+import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
 interface BreedComparison {
   breed1: string

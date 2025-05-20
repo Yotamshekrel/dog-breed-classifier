@@ -95,7 +95,6 @@ function Home() {
   const [showUpload, setShowUpload] = useState(true)
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null)
   const [showDeepAnalysis, setShowDeepAnalysis] = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
   const [showRetry, setShowRetry] = useState(false)
 
   // Helper function to generate report text
@@ -193,7 +192,6 @@ Thank you for using Doggy Detective! 🐕
       
       setResults(response.data.results)
       setResultMessage(RESULT_MESSAGES[Math.floor(Math.random() * RESULT_MESSAGES.length)])
-      setRetryCount(0)
     } catch (err: any) {
       console.error('Error details:', {
         message: err.message,
@@ -220,7 +218,6 @@ Thank you for using Doggy Detective! 🐕
   }
 
   const handleRetry = () => {
-    setRetryCount(prev => prev + 1)
     handleSubmit()
   }
 
