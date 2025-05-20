@@ -8,4 +8,8 @@ services:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: FRONTEND_URL
-        value: https://doggy-detective.vercel.app 
+        value: https://dog-breed-classifier-*.vercel.app
+      - key: CORS_ORIGINS
+        value: https://dog-breed-classifier-*.vercel.app,https://*.vercel.app,http://localhost:5173,https://localhost:5173
+      - key: PORT
+        value: 10000 

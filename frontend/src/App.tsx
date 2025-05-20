@@ -9,6 +9,29 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 axios.defaults.withCredentials = true
 axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*'
 
+// Create axios instance with specific configuration
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+  withCredentials: true
+})
+
+// Add response interceptor for better error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    })
+    return Promise.reject(error)
+  }
+)
+
 interface BreedResult {
   breed: string
   confidence: number
@@ -120,13 +143,7 @@ function App() {
 
     try {
       console.log('Sending request to:', `${API_URL}/api/classify`)
-      const response = await axios.post(`${API_URL}/api/classify`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true,
-        timeout: 30000, // 30 second timeout
-      })
+      const response = await api.post('/api/classify', formData)
       console.log('Received response:', response.data)
       
       // Validate response structure

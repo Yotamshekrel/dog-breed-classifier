@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from PIL import Image
 import io
 import torch
@@ -20,34 +21,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Load environment variables
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://doggy-detective.vercel.app")
-FRONTEND_URLS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://localhost:5173",
-    "https://127.0.0.1:5173",
-    FRONTEND_URL,
-    "https://doggy-detective.vercel.app",  # Explicitly add the production URL
-    "https://*.vercel.app"  # Allow all Vercel preview deployments
-]
-
-# Add Vercel preview URLs if they exist
-if FRONTEND_URL and "vercel.app" in FRONTEND_URL:
-    # Add potential Vercel preview URLs
-    base_url = FRONTEND_URL.replace("https://", "").replace("http://", "").split(".")[0]
-    FRONTEND_URLS.extend([
-        f"https://{base_url}-*-*.vercel.app",  # Vercel preview URLs
-        f"https://{base_url}.vercel.app",      # Main deployment URL
-    ])
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://dog-breed-classifier-*.vercel.app")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://dog-breed-classifier-*.vercel.app,https://*.vercel.app").split(",")
 
 app = FastAPI(title="Doggy Detective API")
 
 # Enable CORS with more permissive configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins in production
+    allow_origins=["*"],  # Allow all origins in development
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,
@@ -192,7 +176,10 @@ async def classify_image(file: UploadFile = File(...)):
     # Validate file type
     if not file.content_type.startswith("image/"):
         logger.warning(f"Invalid file type: {file.content_type}")
-        raise HTTPException(status_code=400, detail="File must be an image")
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "File must be an image"}
+        )
     
     try:
         # Read and process the image
@@ -209,7 +196,10 @@ async def classify_image(file: UploadFile = File(...)):
         
         if not results:
             logger.warning("No dog breeds detected in the image")
-            raise HTTPException(status_code=400, detail="No dog breeds detected in the image")
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "No dog breeds detected in the image"}
+            )
             
         # Clear memory
         del contents, image
@@ -219,13 +209,17 @@ async def classify_image(file: UploadFile = File(...)):
             
         response_data = {"results": results}
         logger.info(f"Sending response: {response_data}")
-        return response_data
+        return JSONResponse(content=response_data)
         
     except Exception as e:
         logger.error(f"Error processing image: {str(e)}")
         logger.exception("Full error traceback:")
-        raise HTTPException(status_code=500, detail=str(e))
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e)}
+        )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 
