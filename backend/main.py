@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://dog-breed-classifier-*.vercel.app")
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://dog-breed-classifier-*.vercel.app,https://*.vercel.app").split(",")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "https://dog-breed-classifier-*.vercel.app,https://*.vercel.app,http://localhost:5173,https://localhost:5173").split(",")
 
 app = FastAPI(title="Doggy Detective API")
 
 # Enable CORS with more permissive configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
+    allow_origins=CORS_ORIGINS,  # Use the environment variable instead of wildcard
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
