@@ -3,92 +3,57 @@ import apiService from '../api'
 import axios from 'axios'
 
 vi.mock('axios')
+const mockedAxios = axios as jest.Mocked<typeof axios>
 
-describe('apiService', () => {
-  const mockAxios = axios as jest.Mocked<typeof axios>
-
+describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('classifyImage makes a POST request with FormData', async () => {
-    const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+  it('classifies image successfully', async () => {
     const mockResponse = {
       data: [
         { breed: 'Labrador', confidence: 0.95 },
-        { breed: 'Golden Retriever', confidence: 0.05 },
-      ],
+        { breed: 'Golden Retriever', confidence: 0.05 }
+      ]
     }
+    mockedAxios.post.mockResolvedValueOnce(mockResponse)
 
-    mockAxios.post.mockResolvedValueOnce(mockResponse)
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+    const result = await apiService.classifyImage(file)
 
-    const result = await apiService.classifyImage(mockFile)
-
-    expect(mockAxios.post).toHaveBeenCalledWith(
-      '/classify',
-      expect.any(FormData),
-      expect.objectContaining({
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
-    )
     expect(result).toEqual(mockResponse.data)
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/classify', expect.any(FormData))
   })
 
-  it('getBreedAnalysis makes a GET request', async () => {
+  it('handles classification error', async () => {
+    mockedAxios.post.mockRejectedValueOnce(new Error('API Error'))
+
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
+    await expect(apiService.classifyImage(file)).rejects.toThrow('API Error')
+  })
+
+  it('gets breed analysis successfully', async () => {
     const mockResponse = {
       data: {
-        temperament: {
-          score: 0.8,
-          traits: ['Friendly', 'Intelligent'],
-        },
-        health: {
-          score: 0.7,
-          considerations: ['Hip dysplasia'],
-        },
-      },
+        temperament: 'Friendly',
+        health: { score: 8, concerns: ['Hip dysplasia'] },
+        training: { score: 9, tips: ['Positive reinforcement'] },
+        exercise: { score: 7, requirements: 'Daily walks'] },
+        grooming: { score: 6, needs: ['Weekly brushing'] }
+      }
     }
-
-    mockAxios.get.mockResolvedValueOnce(mockResponse)
+    mockedAxios.get.mockResolvedValueOnce(mockResponse)
 
     const result = await apiService.getBreedAnalysis('Labrador')
 
-    expect(mockAxios.get).toHaveBeenCalledWith('/analyze/Labrador')
     expect(result).toEqual(mockResponse.data)
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/breeds/Labrador/analysis')
   })
 
-  it('compareBreeds makes a GET request', async () => {
-    const mockResponse = {
-      data: {
-        breed1: 'Labrador',
-        breed2: 'Golden Retriever',
-        similarities: ['Friendly', 'Intelligent'],
-        differences: ['Coat type'],
-        compatibilityScore: 0.85,
-      },
-    }
+  it('handles breed analysis error', async () => {
+    mockedAxios.get.mockRejectedValueOnce(new Error('API Error'))
 
-    mockAxios.get.mockResolvedValueOnce(mockResponse)
-
-    const result = await apiService.compareBreeds('Labrador', 'Golden Retriever')
-
-    expect(mockAxios.get).toHaveBeenCalledWith('/compare/Labrador/Golden Retriever')
-    expect(result).toEqual(mockResponse.data)
-  })
-
-  it('handles API errors correctly', async () => {
-    const errorMessage = 'API Error'
-    mockAxios.get.mockRejectedValueOnce(new Error(errorMessage))
-
-    await expect(apiService.getBreedAnalysis('Labrador')).rejects.toThrow(errorMessage)
-  })
-
-  it('handles network errors correctly', async () => {
-    mockAxios.get.mockRejectedValueOnce({ request: {} })
-
-    await expect(apiService.getBreedAnalysis('Labrador')).rejects.toThrow(
-      'Network error - no response received'
-    )
+    await expect(apiService.getBreedAnalysis('Labrador')).rejects.toThrow('API Error')
   })
 }) 

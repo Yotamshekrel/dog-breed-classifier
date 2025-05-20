@@ -36,16 +36,15 @@ api.interceptors.response.use(
 export interface BreedResult {
   breed: string
   confidence: number
+  characteristics?: string[]
+  funFacts?: string[]
 }
 
 export interface BreedAnalysis {
-  temperament: {
-    score: number
-    traits: string[]
-  }
+  temperament: string
   health: {
     score: number
-    considerations: string[]
+    concerns: string[]
   }
   training: {
     score: number
@@ -53,11 +52,11 @@ export interface BreedAnalysis {
   }
   exercise: {
     score: number
-    requirements: string[]
+    requirements: string
   }
   grooming: {
     score: number
-    requirements: string[]
+    needs: string[]
   }
 }
 
@@ -95,7 +94,7 @@ export const apiService = {
   // Image Classification
   classifyImage: async (file: File): Promise<BreedResult[]> => {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('image', file)
     const response = await api.post<BreedResult[]>('/classify', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -106,7 +105,7 @@ export const apiService = {
 
   // Breed Analysis
   getBreedAnalysis: async (breed: string): Promise<BreedAnalysis> => {
-    const response = await api.get<BreedAnalysis>(`/analyze/${breed}`)
+    const response = await api.get<BreedAnalysis>(`/breeds/${breed}/analysis`)
     return response.data
   },
 
@@ -130,13 +129,13 @@ export const apiService = {
 
   // Breed of Day
   getBreedOfDay: async (): Promise<BreedResult> => {
-    const response = await api.get<BreedResult>('/breed-of-day')
+    const response = await api.get<BreedResult>('/breeds/breed-of-day')
     return response.data
   },
 
   // Random Breed
   getRandomBreed: async (): Promise<BreedResult> => {
-    const response = await api.get<BreedResult>('/random-breed')
+    const response = await api.get<BreedResult>('/breeds/random')
     return response.data
   },
 
@@ -149,11 +148,8 @@ export const apiService = {
     return response.data
   },
 
-  checkBreedGuess: async (guess: string): Promise<{
-    correct: boolean
-    actualBreed?: string
-  }> => {
-    const response = await api.post<{ correct: boolean; actualBreed?: string }>('/check-guess', { guess })
+  checkBreedGuess: async (guess: string): Promise<{ correct: boolean; actualBreed: string }> => {
+    const response = await api.post<{ correct: boolean; actualBreed: string }>('/guess/check', { guess })
     return response.data
   },
 }

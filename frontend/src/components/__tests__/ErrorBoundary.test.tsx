@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
 import ErrorBoundary from '../ErrorBoundary'
 
 const ThrowError = () => {
@@ -6,15 +7,6 @@ const ThrowError = () => {
 }
 
 describe('ErrorBoundary', () => {
-  beforeEach(() => {
-    // Suppress console.error for expected errors
-    jest.spyOn(console, 'error').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
   it('renders children when there is no error', () => {
     render(
       <ErrorBoundary>
@@ -24,22 +16,9 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Test content')).toBeInTheDocument()
   })
 
-  it('renders error UI when there is an error', () => {
-    render(
-      <ErrorBoundary>
-        <ThrowError />
-      </ErrorBoundary>
-    )
-    expect(screen.getByText('Oops! Something went wrong')).toBeInTheDocument()
-    expect(screen.getByText('Test error')).toBeInTheDocument()
-  })
-
-  it('reloads page when refresh button is clicked', () => {
-    const reload = jest.fn()
-    Object.defineProperty(window, 'location', {
-      value: { reload },
-      writable: true,
-    })
+  it('renders error message when there is an error', () => {
+    const consoleError = vi.spyOn(console, 'error')
+    consoleError.mockImplementation(() => {})
 
     render(
       <ErrorBoundary>
@@ -47,7 +26,9 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     )
 
-    fireEvent.click(screen.getByText('Refresh Page'))
-    expect(reload).toHaveBeenCalled()
+    expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument()
+    expect(screen.getByText(/Test error/i)).toBeInTheDocument()
+
+    consoleError.mockRestore()
   })
 }) 

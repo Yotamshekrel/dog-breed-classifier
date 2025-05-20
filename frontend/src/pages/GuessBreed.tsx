@@ -33,8 +33,13 @@ function GuessBreed() {
     setLoading(true)
     setError(null)
     try {
-      const result = await apiService.guessBreed(selectedFile)
-      setGuess(result)
+      const result = await apiService.classifyImage(selectedFile)
+      setGuess({
+        breed: result[0].breed,
+        confidence: result[0].confidence,
+        characteristics: result[0].characteristics || [],
+        funFacts: result[0].funFacts || []
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to guess breed')
     } finally {
