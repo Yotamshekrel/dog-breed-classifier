@@ -11,7 +11,7 @@ axios.defaults.withCredentials = true
 // Create axios instance with specific configuration
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 30000,
+  timeout: 75000, // Increased to 75 seconds
   headers: {
     'Content-Type': 'multipart/form-data',
   },
@@ -95,6 +95,27 @@ function App() {
   const [showUpload, setShowUpload] = useState(true)
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null)
   const [showDeepAnalysis, setShowDeepAnalysis] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
+  const [showRetry, setShowRetry] = useState(false)
+
+  // Helper function to generate report text
+  const generateReport = () => {
+    const date = new Date().toLocaleDateString()
+    const time = new Date().toLocaleTimeString()
+    const topBreed = results[0]
+    
+    return `Doggy Detective Report
+Generated on: ${date} at ${time}
+
+Top Breed Match:
+${topBreed.breed} (${topBreed.confidence.toFixed(1)}% confidence)
+
+All Breed Matches:
+${results.map((r: BreedResult, i: number) => `${i + 1}. ${r.breed} (${r.confidence.toFixed(1)}%)`).join('\n')}
+
+Thank you for using Doggy Detective! 🐕
+`
+  }
 
   // Rotate through dog facts during loading
   useEffect(() => {
@@ -135,6 +156,7 @@ function App() {
 
     setLoading(true)
     setError(null)
+    setShowRetry(false)
     setCurrentFact(DOG_FACTS[Math.floor(Math.random() * DOG_FACTS.length)])
     
     const formData = new FormData()
@@ -171,20 +193,35 @@ function App() {
       
       setResults(response.data.results)
       setResultMessage(RESULT_MESSAGES[Math.floor(Math.random() * RESULT_MESSAGES.length)])
+      setRetryCount(0)
     } catch (err: any) {
       console.error('Error details:', {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status
       })
-      setError(
-        err.response?.data?.detail || 
-        err.message || 
-        'Ruff! Something went wrong. Try again! 🐾'
-      )
+      
+      let errorMessage = 'Ruff! Something went wrong. '
+      if (err.code === 'ECONNABORTED') {
+        errorMessage += 'The request took too long. '
+      } else if (err.response?.status === 413) {
+        errorMessage += 'The image is too large. '
+      } else if (err.response?.status === 415) {
+        errorMessage += 'The file type is not supported. '
+      } else {
+        errorMessage += err.response?.data?.detail || err.message || 'Try again! '
+      }
+      
+      setError(errorMessage + '🐾')
+      setShowRetry(true)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1)
+    handleSubmit()
   }
 
   const resetUpload = () => {
@@ -343,6 +380,34 @@ function App() {
             Upload a photo and I'll sniff out the breed! Woof! 🐾
           </p>
           
+          {/* Platform Explanation */}
+          <div className="mb-12 text-left bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
+            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
+              Welcome to Doggy Detective! 🐕
+            </h2>
+            <div className="space-y-4 text-gray-700">
+              <p>
+                <strong>What is Doggy Detective?</strong> It's an AI-powered tool that helps you identify your dog's breed 
+                using advanced machine learning technology. Simply upload a clear photo of your dog, and our system will 
+                analyze it to determine the most likely breeds.
+              </p>
+              <p>
+                <strong>How does it work?</strong> We use a sophisticated MobileNetV2 neural network trained on thousands 
+                of dog images to identify breed characteristics. The system analyzes your dog's features and provides 
+                confidence scores for the most likely breeds.
+              </p>
+              <p>
+                <strong>How to use:</strong>
+              </p>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Click "Upload a photo" or drag and drop an image</li>
+                <li>Make sure the photo is clear and shows your dog's face</li>
+                <li>Click "What breed am I?" to start the analysis</li>
+                <li>View the results and learn more about each breed</li>
+              </ol>
+            </div>
+          </div>
+
           {/* Upload Area or New Photo Button */}
           {showUpload ? (
             <div
@@ -419,28 +484,59 @@ function App() {
             </div>
           )}
 
-          {/* Error Message */}
+          {/* Error Message with Retry Button */}
           {error && (
             <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100">
-              <p className="text-red-600">{error}</p>
+              <p className="text-red-600 mb-4">{error}</p>
+              {showRetry && (
+                <button
+                  onClick={handleRetry}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Try Again 🐾
+                </button>
+              )}
             </div>
           )}
 
-          {/* Results with Share Button */}
+          {/* Results with Share and Save Buttons */}
           {results.length > 0 && (
             <div className="mt-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
                   {resultMessage}
                 </h2>
-                <button
-                  onClick={handleShare}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-purple-600 hover:text-purple-700 focus:outline-none"
-                  title="Share results"
-                >
-                  <ShareIcon className="h-5 w-5 mr-1" />
-                  Share Results
-                </button>
+                <div className="space-x-2">
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-purple-600 hover:text-purple-700 focus:outline-none"
+                    title="Share results"
+                  >
+                    <ShareIcon className="h-5 w-5 mr-1" />
+                    Share
+                  </button>
+                  <button
+                    onClick={() => {
+                      const report = generateReport()
+                      const blob = new Blob([report], { type: 'text/plain' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'dog-breed-report.txt'
+                      document.body.appendChild(a)
+                      a.click()
+                      document.body.removeChild(a)
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-purple-600 hover:text-purple-700 focus:outline-none"
+                    title="Save report"
+                  >
+                    <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Save Report
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-6">
@@ -449,7 +545,17 @@ function App() {
                     <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
                       <div className="flex items-center space-x-3">
                         <span className="text-2xl">{index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🐾'}</span>
-                        <span className="text-lg font-medium text-gray-800">{result.breed}</span>
+                        <div className="flex flex-col">
+                          <span className="text-lg font-medium text-gray-800">{result.breed}</span>
+                          <a
+                            href={`https://www.google.com/search?q=${encodeURIComponent(result.breed + ' dog breed')}&tbm=isch`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-purple-600 hover:text-purple-700"
+                          >
+                            View Breed Photos 🔍
+                          </a>
+                        </div>
                         <button
                           onClick={() => setSelectedBreed(result.breed)}
                           className="ml-2 text-purple-600 hover:text-purple-700"
