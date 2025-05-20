@@ -26,7 +26,9 @@ FRONTEND_URLS = [
     "http://127.0.0.1:5173",
     "https://localhost:5173",
     "https://127.0.0.1:5173",
-    FRONTEND_URL
+    FRONTEND_URL,
+    "https://doggy-detective.vercel.app",  # Explicitly add the production URL
+    "https://*.vercel.app"  # Allow all Vercel preview deployments
 ]
 
 # Add Vercel preview URLs if they exist
@@ -40,10 +42,10 @@ if FRONTEND_URL and "vercel.app" in FRONTEND_URL:
 
 app = FastAPI(title="Doggy Detective API")
 
-# Enable CORS with more permissive configuration for development
+# Enable CORS with more permissive configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=FRONTEND_URLS,
+    allow_origins=["*"],  # Allow all origins in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

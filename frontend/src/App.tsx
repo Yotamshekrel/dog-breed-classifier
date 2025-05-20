@@ -5,6 +5,10 @@ import { CloudArrowUpIcon, XMarkIcon, InformationCircleIcon, ShareIcon } from '@
 // Get API URL from environment variable with fallback for local development
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
+// Configure axios defaults
+axios.defaults.withCredentials = true
+axios.defaults.headers.common['Access-Control-Allow-Origin'] = '*'
+
 interface BreedResult {
   breed: string
   confidence: number
@@ -120,6 +124,8 @@ function App() {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        withCredentials: true,
+        timeout: 30000, // 30 second timeout
       })
       console.log('Received response:', response.data)
       
