@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
 interface BreedComparison {
