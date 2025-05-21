@@ -102,96 +102,91 @@ function AdvancedAnalysis() {
               {selectedBreed} Analysis
             </h2>
 
-            {/* Temperament */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Temperament
-              </h3>
-              <p className="text-gray-700">{analysis.temperament}</p>
-            </div>
-
-            {/* Health */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Health</h3>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-700">Health Score</span>
-                  <span className="text-gray-700">{analysis.health.score}/10</span>
+            {/* Health Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Health</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Common Health Issues</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {analysis.health.commonIssues.map((issue, index) => (
+                      <li key={index} className="text-gray-600">{issue}</li>
+                    ))}
+                  </ul>
                 </div>
-                {renderScoreBar(analysis.health.score)}
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                  Health Concerns
-                </h4>
-                <ul className="list-disc list-inside text-gray-700">
-                  {analysis.health.concerns.map((concern, index) => (
-                    <li key={index}>{concern}</li>
-                  ))}
-                </ul>
+                <div>
+                  <h4 className="font-medium mb-2">Health Considerations</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {analysis.health.considerations.map((consideration, index) => (
+                      <li key={index} className="text-gray-600">{consideration}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
 
-            {/* Training */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Training
-              </h3>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-700">Training Score</span>
-                  <span className="text-gray-700">{analysis.training.score}/10</span>
+            {/* Training Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Training</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Training Difficulty</h4>
+                  <div className="flex items-center">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
+                        style={{ width: `${(analysis.training.difficulty / 10) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="ml-2 text-gray-600">{analysis.training.difficulty}/10</span>
+                  </div>
                 </div>
-                {renderScoreBar(analysis.training.score)}
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                  Training Tips
-                </h4>
-                <ul className="list-disc list-inside text-gray-700">
-                  {analysis.training.tips.map((tip, index) => (
-                    <li key={index}>{tip}</li>
-                  ))}
-                </ul>
+                <div>
+                  <h4 className="font-medium mb-2">Training Tips</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {analysis.training.tips.map((tip, index) => (
+                      <li key={index} className="text-gray-600">{tip}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
 
-            {/* Exercise */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Exercise
-              </h3>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-700">Exercise Score</span>
-                  <span className="text-gray-700">{analysis.exercise.score}/10</span>
+            {/* Exercise Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Exercise</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Daily Exercise Needs</h4>
+                  <p className="text-gray-600">{analysis.exercise.dailyNeeds}</p>
                 </div>
-                {renderScoreBar(analysis.exercise.score)}
+                <div>
+                  <h4 className="font-medium mb-2">Recommended Activities</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {analysis.exercise.activities.map((activity, index) => (
+                      <li key={index} className="text-gray-600">{activity}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <p className="text-gray-700">{analysis.exercise.requirements}</p>
             </div>
 
-            {/* Grooming */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Grooming
-              </h3>
-              <div className="mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-700">Grooming Score</span>
-                  <span className="text-gray-700">{analysis.grooming.score}/10</span>
+            {/* Grooming Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Grooming</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Grooming Frequency</h4>
+                  <p className="text-gray-600">{analysis.grooming.frequency}</p>
                 </div>
-                {renderScoreBar(analysis.grooming.score)}
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                  Grooming Needs
-                </h4>
-                <ul className="list-disc list-inside text-gray-700">
-                  {analysis.grooming.needs.map((need, index) => (
-                    <li key={index}>{need}</li>
-                  ))}
-                </ul>
+                <div>
+                  <h4 className="font-medium mb-2">Grooming Requirements</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {analysis.grooming.requirements.map((requirement, index) => (
+                      <li key={index} className="text-gray-600">{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

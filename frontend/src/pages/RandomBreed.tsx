@@ -3,21 +3,11 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import apiService from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
-interface Breed {
-  name: string
-  description: string
-  temperament: string[]
-  characteristics: {
-    size: string
-    lifespan: string
-    exercise: string
-    grooming: string
-  }
-  imageUrl: string
-}
+// Use the correct type for breed
+import type { BreedAnalysis } from '../services/api'
 
 function RandomBreed() {
-  const [breed, setBreed] = useState<Breed | null>(null)
+  const [breed, setBreed] = useState<BreedAnalysis | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +18,7 @@ function RandomBreed() {
       const result = await apiService.getRandomBreed()
       setBreed(result)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get random breed')
+      setError('Failed to fetch random breed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -79,11 +69,14 @@ function RandomBreed() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Image */}
             <div className="relative h-64 md:h-full rounded-xl overflow-hidden">
-              <img
-                src={breed.imageUrl}
-                alt={breed.name}
-                className="w-full h-full object-cover"
-              />
+              {/* Only render image if available */}
+              {('imageUrl' in breed && (breed as any).imageUrl) ? (
+                <img
+                  src={(breed as any).imageUrl}
+                  alt={breed.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : null}
             </div>
 
             {/* Details */}
@@ -99,7 +92,7 @@ function RandomBreed() {
               <div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-3">Temperament</h3>
                 <div className="flex flex-wrap gap-2">
-                  {breed.temperament.map((trait, index) => (
+                  {breed.temperament && breed.temperament.map((trait: string, index: number) => (
                     <span
                       key={index}
                       className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
@@ -121,14 +114,6 @@ function RandomBreed() {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-500">Lifespan</h4>
                     <p className="text-gray-800">{breed.characteristics.lifespan}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-500">Exercise</h4>
-                    <p className="text-gray-800">{breed.characteristics.exercise}</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="text-sm font-medium text-gray-500">Grooming</h4>
-                    <p className="text-gray-800">{breed.characteristics.grooming}</p>
                   </div>
                 </div>
               </div>

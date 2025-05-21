@@ -1,17 +1,6 @@
 import { useState } from 'react'
-import apiService from '../services/api'
+import apiService, { BreedMix } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
-
-interface BreedMix {
-  breeds: Array<{
-    name: string
-    percentage: number
-  }>
-  characteristics: string[]
-  temperament: string[]
-  health: string[]
-  care: string[]
-}
 
 function BreedMixCalculator() {
   const [selectedBreeds, setSelectedBreeds] = useState<string[]>([])
@@ -41,33 +30,27 @@ function BreedMixCalculator() {
     }))
   }
 
-  const calculateMix = async () => {
-    if (selectedBreeds.length < 2) {
-      setError('Please select at least 2 breeds')
-      return
+  const handleCalculate = async () => {
+    if (!selectedBreeds.length) {
+      setError('Please select at least one breed');
+      return;
     }
 
-    const totalPercentage = Object.values(percentages).reduce((sum, val) => sum + val, 0)
-    if (Math.abs(totalPercentage - 100) > 0.01) {
-      setError('Percentages must add up to 100%')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const breeds = selectedBreeds.map(name => ({
-        name,
-        percentage: percentages[name]
-      }))
-      const result = await apiService.calculateBreedMix(breeds)
-      setMixResult(result)
+      const breedMixInput = selectedBreeds.map(breed => ({
+        name: breed,
+        percentage: percentages[breed] || 100 / selectedBreeds.length
+      }));
+      const result = await apiService.calculateMix(breedMixInput);
+      setMixResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to calculate breed mix')
+      setError('Failed to calculate breed mix. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const resetCalculator = () => {
     setSelectedBreeds([])
@@ -136,7 +119,7 @@ function BreedMixCalculator() {
       {/* Action Buttons */}
       <div className="flex justify-center space-x-4 mb-8">
         <button
-          onClick={calculateMix}
+          onClick={handleCalculate}
           disabled={selectedBreeds.length < 2 || loading}
           className="inline-flex items-center px-6 py-3 border border-transparent text-lg font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
         >
@@ -192,11 +175,20 @@ function BreedMixCalculator() {
               <h3 className="text-2xl font-bold text-gray-800 mb-4">
                 Characteristics
               </h3>
-              <ul className="list-disc list-inside text-gray-700">
-                {mixResult.characteristics.map((characteristic, index) => (
-                  <li key={index}>{characteristic}</li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500">Size</h4>
+                  <p className="text-gray-800">{mixResult.characteristics.size}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500">Exercise</h4>
+                  <p className="text-gray-800">{mixResult.characteristics.exercise}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-500">Grooming</h4>
+                  <p className="text-gray-800">{mixResult.characteristics.grooming}</p>
+                </div>
+              </div>
             </div>
 
             {/* Temperament */}
@@ -204,11 +196,16 @@ function BreedMixCalculator() {
               <h3 className="text-2xl font-bold text-gray-800 mb-4">
                 Temperament
               </h3>
-              <ul className="list-disc list-inside text-gray-700">
-                {mixResult.temperament.map((trait, index) => (
-                  <li key={index}>{trait}</li>
+              <div className="flex flex-wrap gap-2">
+                {mixResult.characteristics.temperament.map((trait, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
+                  >
+                    {trait}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* Health */}
@@ -217,7 +214,7 @@ function BreedMixCalculator() {
                 Health Considerations
               </h3>
               <ul className="list-disc list-inside text-gray-700">
-                {mixResult.health.map((consideration, index) => (
+                {mixResult.health.considerations.map((consideration, index) => (
                   <li key={index}>{consideration}</li>
                 ))}
               </ul>
@@ -228,11 +225,32 @@ function BreedMixCalculator() {
               <h3 className="text-2xl font-bold text-gray-800 mb-4">
                 Care Requirements
               </h3>
-              <ul className="list-disc list-inside text-gray-700">
-                {mixResult.care.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Training</h4>
+                  <ul className="list-disc list-inside text-gray-700">
+                    {mixResult.care.training.map((tip, index) => (
+                      <li key={index}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Exercise</h4>
+                  <ul className="list-disc list-inside text-gray-700">
+                    {mixResult.care.exercise.map((activity, index) => (
+                      <li key={index}>{activity}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-700 mb-2">Grooming</h4>
+                  <ul className="list-disc list-inside text-gray-700">
+                    {mixResult.care.grooming.map((requirement, index) => (
+                      <li key={index}>{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
