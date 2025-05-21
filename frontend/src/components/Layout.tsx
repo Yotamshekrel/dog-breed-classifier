@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
+  MagnifyingGlassIcon,
   HomeIcon,
   ScaleIcon,
   ChartBarIcon,
@@ -20,14 +21,15 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Home', href: '/', icon: HomeIcon },
+    { name: 'Dog Detective', href: '/', icon: MagnifyingGlassIcon },
+    { name: 'Home', href: '/home', icon: HomeIcon },
     { name: 'Breed Comparison', href: '/compare', icon: ScaleIcon },
-    { name: 'Advanced Analysis', href: '/analysis', icon: ChartBarIcon },
-    { name: 'Breed Mix Calculator', href: '/mix-calculator', icon: CalculatorIcon },
+    { name: 'Advanced Analysis', href: '/analyze', icon: ChartBarIcon },
+    { name: 'Breed Mix Calculator', href: '/mix', icon: CalculatorIcon },
     { name: 'Training Tips', href: '/training', icon: AcademicCapIcon },
     { name: 'Breed of the Day', href: '/breed-of-day', icon: SparklesIcon },
-    { name: 'Random Breed', href: '/random-breed', icon: ArrowPathIcon },
-    { name: 'Guess the Breed', href: '/guess-breed', icon: QuestionMarkCircleIcon },
+    { name: 'Random Breed', href: '/random', icon: ArrowPathIcon },
+    { name: 'Guess the Breed', href: '/guess', icon: QuestionMarkCircleIcon },
   ]
 
   return (

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
+import DogDetective from './pages/DogDetective'
 import Home from './pages/Home'
 import BreedComparison from './pages/BreedComparison'
 import AdvancedAnalysis from './pages/AdvancedAnalysis'
@@ -16,7 +17,8 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<DogDetective />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/compare" element={<BreedComparison />} />
             <Route path="/analyze" element={<AdvancedAnalysis />} />
             <Route path="/mix" element={<BreedMixCalculator />} />

@@ -11,6 +11,8 @@ import os
 import gc  # For garbage collection
 import logging
 import sys
+from datetime import datetime
+import random
 
 # Configure logging
 logging.basicConfig(
@@ -48,6 +50,64 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
+# Add these constants after the existing ones
+DOG_BREEDS = [
+    "Labrador Retriever", "German Shepherd", "Golden Retriever", "French Bulldog",
+    "Bulldog", "Poodle", "Beagle", "Rottweiler", "Dachshund", "Yorkshire Terrier",
+    "Boxer", "Chihuahua", "Great Dane", "Shih Tzu", "Siberian Husky"
+]
+
+BREED_DESCRIPTIONS = {
+    "Labrador Retriever": "Friendly, outgoing, and high-spirited companions who have more than enough affection to go around for a family looking for a medium-to-large dog.",
+    "German Shepherd": "Intelligent and capable working dogs. Their devotion and courage are unmatched.",
+    "Golden Retriever": "Intelligent, friendly, and devoted. These dogs are easy to train and get along with just about everyone.",
+    "French Bulldog": "Adaptable, playful, and smart. They're compact but sturdy, with a friendly, easygoing temperament.",
+    "Bulldog": "Calm, courageous, and friendly. They're dignified but amusing, and make excellent companions.",
+    "Poodle": "Exceptionally smart and active dogs. They're eager to please and make wonderful family pets.",
+    "Beagle": "Friendly, curious, and merry. They're excellent with children and generally good with other dogs.",
+    "Rottweiler": "Loyal, loving, and confident guardians. They're natural protectors and very intelligent.",
+    "Dachshund": "Lively, clever, and courageous. They're known for their distinctive shape and spirited personality.",
+    "Yorkshire Terrier": "Bold, confident, and courageous. They're small but mighty, with a big personality.",
+    "Boxer": "Patient, playful, and energetic. They're great with children and make excellent family dogs.",
+    "Chihuahua": "Graceful, charming, and sassy. They're the smallest breed but have a big personality.",
+    "Great Dane": "Friendly, patient, and dependable. They're gentle giants who make excellent family pets.",
+    "Shih Tzu": "Affectionate, playful, and outgoing. They're known for their beautiful long coat and sweet nature.",
+    "Siberian Husky": "Loyal, mischievous, and outgoing. They're known for their striking appearance and friendly nature."
+}
+
+BREED_CHARACTERISTICS = {
+    "Labrador Retriever": {
+        "size": "Large",
+        "lifespan": "10-12 years",
+        "exercise": "High",
+        "grooming": "Moderate"
+    },
+    "German Shepherd": {
+        "size": "Large",
+        "lifespan": "9-13 years",
+        "exercise": "High",
+        "grooming": "Moderate"
+    },
+    "Golden Retriever": {
+        "size": "Large",
+        "lifespan": "10-12 years",
+        "exercise": "High",
+        "grooming": "Moderate"
+    },
+    "French Bulldog": {
+        "size": "Small",
+        "lifespan": "10-12 years",
+        "exercise": "Low",
+        "grooming": "Low"
+    },
+    "Bulldog": {
+        "size": "Medium",
+        "lifespan": "8-10 years",
+        "exercise": "Low",
+        "grooming": "Low"
+    }
+}
 
 @app.on_event("startup")
 async def load_model():
@@ -244,6 +304,143 @@ async def classify_image(request: Request, file: UploadFile = File(...)):
                 "Access-Control-Allow-Headers": "*",
             }
         )
+
+@app.get("/api/breeds/daily")
+async def get_breed_of_the_day():
+    """Get the breed of the day"""
+    # Use the current date to determine the breed of the day
+    today = datetime.now().strftime("%Y-%m-%d")
+    random.seed(today)  # This ensures the same breed is returned for the same day
+    breed = random.choice(DOG_BREEDS)
+    
+    return {
+        "name": breed,
+        "description": BREED_DESCRIPTIONS.get(breed, "A wonderful companion dog."),
+        "imageUrl": f"https://source.unsplash.com/featured/?{breed.replace(' ', '+')}+dog",
+        "funFact": f"Did you know? {breed}s are known for their unique characteristics!"
+    }
+
+@app.get("/api/breeds/compare")
+async def compare_breeds(breed1: str, breed2: str):
+    """Compare two dog breeds"""
+    if breed1 not in DOG_BREEDS or breed2 not in DOG_BREEDS:
+        raise HTTPException(status_code=404, detail="One or both breeds not found")
+    
+    # Generate some comparison data
+    similarities = [
+        "Both breeds make excellent family pets",
+        "Both require regular exercise",
+        "Both are known for their loyalty"
+    ]
+    
+    differences = [
+        f"{breed1}s are generally {BREED_CHARACTERISTICS[breed1]['size'].lower()} while {breed2}s are {BREED_CHARACTERISTICS[breed2]['size'].lower()}",
+        f"{breed1}s typically live {BREED_CHARACTERISTICS[breed1]['lifespan']} while {breed2}s live {BREED_CHARACTERISTICS[breed2]['lifespan']}",
+        f"{breed1}s require {BREED_CHARACTERISTICS[breed1]['exercise'].lower()} exercise while {breed2}s need {BREED_CHARACTERISTICS[breed2]['exercise'].lower()} exercise"
+    ]
+    
+    # Calculate a compatibility score (just for demonstration)
+    compatibility_score = random.randint(60, 95)
+    
+    return {
+        "breed1": breed1,
+        "breed2": breed2,
+        "similarities": similarities,
+        "differences": differences,
+        "compatibilityScore": compatibility_score
+    }
+
+@app.get("/api/breeds/{breed}/analysis")
+async def get_breed_analysis(breed: str):
+    """Get detailed analysis of a specific breed"""
+    if breed not in DOG_BREEDS:
+        raise HTTPException(status_code=404, detail="Breed not found")
+    
+    return {
+        "name": breed,
+        "description": BREED_DESCRIPTIONS.get(breed, "A wonderful companion dog."),
+        "temperament": ["Friendly", "Loyal", "Intelligent", "Playful"],
+        "characteristics": BREED_CHARACTERISTICS.get(breed, {
+            "size": "Medium",
+            "lifespan": "10-12 years",
+            "exercise": "Moderate",
+            "grooming": "Moderate"
+        }),
+        "health": {
+            "commonIssues": ["Hip dysplasia", "Eye conditions", "Heart disease"],
+            "considerations": ["Regular vet check-ups", "Proper diet", "Exercise"]
+        },
+        "training": {
+            "difficulty": random.randint(1, 10),
+            "tips": [
+                "Start training early",
+                "Use positive reinforcement",
+                "Be consistent with commands"
+            ]
+        },
+        "exercise": {
+            "dailyNeeds": "30-60 minutes of exercise",
+            "activities": ["Walking", "Playing fetch", "Swimming"]
+        },
+        "grooming": {
+            "frequency": "Weekly",
+            "requirements": ["Brushing", "Bathing", "Nail trimming"]
+        }
+    }
+
+@app.get("/api/breeds/random")
+async def get_random_breed():
+    """Get a random dog breed"""
+    breed = random.choice(DOG_BREEDS)
+    return await get_breed_analysis(breed)
+
+@app.post("/api/breeds/mix")
+async def calculate_mix(breeds: list):
+    """Calculate characteristics of mixed breeds"""
+    if not breeds:
+        raise HTTPException(status_code=400, detail="No breeds provided")
+    
+    # Validate breeds
+    for breed in breeds:
+        if breed["name"] not in DOG_BREEDS:
+            raise HTTPException(status_code=404, detail=f"Breed {breed['name']} not found")
+    
+    # Calculate mix characteristics
+    characteristics = {
+        "size": "Medium",
+        "temperament": ["Friendly", "Loyal", "Intelligent"],
+        "exercise": "Moderate",
+        "grooming": "Moderate"
+    }
+    
+    return {
+        "breeds": breeds,
+        "characteristics": characteristics,
+        "health": {
+            "considerations": [
+                "Regular vet check-ups",
+                "Watch for breed-specific conditions",
+                "Maintain healthy weight"
+            ]
+        },
+        "care": {
+            "training": [
+                "Start training early",
+                "Use positive reinforcement",
+                "Be consistent"
+            ],
+            "exercise": [
+                "Daily walks",
+                "Play sessions",
+                "Mental stimulation"
+            ],
+            "grooming": [
+                "Regular brushing",
+                "Bathing as needed",
+                "Nail trimming"
+            ]
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
