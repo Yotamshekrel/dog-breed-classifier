@@ -7,7 +7,12 @@ interface BreedGuess {
   breed: string
   confidence: number
   description: string
-  characteristics: string[]
+  characteristics: {
+    size: string
+    lifespan: string
+    exercise: string
+    grooming: string
+  }
 }
 
 function GuessBreed() {
@@ -41,7 +46,7 @@ function GuessBreed() {
     setError(null)
     try {
       const formData = new FormData()
-      formData.append('image', selectedFile)
+      formData.append('file', selectedFile)
       const result = await apiService.guessBreed(formData)
       setGuess(result)
     } catch (err) {
@@ -175,12 +180,22 @@ function GuessBreed() {
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h3 className="text-xl font-semibold text-gray-800 mb-3">Characteristics</h3>
               <ul className="space-y-2">
-                {guess.characteristics.map((characteristic, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-purple-500 mr-2">•</span>
-                    <span className="text-gray-600">{characteristic}</span>
-                  </li>
-                ))}
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  <span className="text-gray-600"><strong>Size:</strong> {guess.characteristics.size}</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  <span className="text-gray-600"><strong>Lifespan:</strong> {guess.characteristics.lifespan}</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  <span className="text-gray-600"><strong>Exercise:</strong> {guess.characteristics.exercise}</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-purple-500 mr-2">•</span>
+                  <span className="text-gray-600"><strong>Grooming:</strong> {guess.characteristics.grooming}</span>
+                </li>
               </ul>
             </div>
           </div>

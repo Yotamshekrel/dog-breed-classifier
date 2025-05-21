@@ -109,6 +109,58 @@ BREED_CHARACTERISTICS = {
     }
 }
 
+# Add training tips data
+TRAINING_TIPS = {
+    "Labrador Retriever": [
+        {
+            "title": "Basic Obedience Training",
+            "description": "Essential commands for your Labrador",
+            "difficulty": "Beginner",
+            "duration": "4-6 weeks",
+            "steps": [
+                "Start with sit command",
+                "Move to stay command",
+                "Practice recall training",
+                "Add down command"
+            ],
+            "proTips": [
+                "Use positive reinforcement",
+                "Keep sessions short and fun",
+                "Be consistent with commands"
+            ],
+            "commonMistakes": [
+                "Inconsistent training schedule",
+                "Using punishment-based methods",
+                "Expecting too much too soon"
+            ]
+        }
+    ],
+    "German Shepherd": [
+        {
+            "title": "Advanced Training",
+            "description": "Advanced commands for German Shepherds",
+            "difficulty": "Advanced",
+            "duration": "8-12 weeks",
+            "steps": [
+                "Master basic commands",
+                "Introduce complex commands",
+                "Add distance commands",
+                "Practice precision training"
+            ],
+            "proTips": [
+                "Use clear hand signals",
+                "Maintain high energy",
+                "Challenge their intelligence"
+            ],
+            "commonMistakes": [
+                "Moving too fast",
+                "Not providing enough mental stimulation",
+                "Inconsistent training methods"
+            ]
+        }
+    ]
+}
+
 @app.on_event("startup")
 async def load_model():
     global model, class_idx
@@ -440,6 +492,50 @@ async def calculate_mix(breeds: list):
                 "Nail trimming"
             ]
         }
+    }
+
+@app.get("/api/training/{breed}")
+async def get_training_tips(breed: str):
+    """Get training tips for a specific breed"""
+    if breed not in TRAINING_TIPS:
+        raise HTTPException(status_code=404, detail="Training tips not found for this breed")
+    return TRAINING_TIPS[breed]
+
+@app.post("/api/breeds/guess")
+async def guess_breed(file: UploadFile = File(...)):
+    """Process an image and return breed guess"""
+    try:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        results = get_predictions(image)
+        
+        if not results:
+            raise HTTPException(status_code=400, detail="No dog breeds detected in the image")
+            
+        top_result = results[0]
+        return {
+            "breed": top_result["breed"],
+            "confidence": top_result["confidence"],
+            "description": BREED_DESCRIPTIONS.get(top_result["breed"], "A wonderful companion dog."),
+            "characteristics": BREED_CHARACTERISTICS.get(top_result["breed"], {
+                "size": "Medium",
+                "lifespan": "10-12 years",
+                "exercise": "Moderate",
+                "grooming": "Moderate"
+            })
+        }
+    except Exception as e:
+        logger.error(f"Error processing image: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/guess/check")
+async def check_breed_guess(guess: str):
+    """Check if a breed guess is correct"""
+    # In a real application, this would compare against the actual breed
+    # For now, we'll just return a mock response
+    return {
+        "correct": random.choice([True, False]),
+        "actualBreed": random.choice(DOG_BREEDS)
     }
 
 if __name__ == "__main__":

@@ -143,39 +143,6 @@ function DogDetective() {
                       style={{ width: `${result.confidence}%` }}
                     ></div>
                   </div>
-
-                  {/* Characteristics */}
-                  {result.characteristics && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Characteristics
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {result.characteristics.map((char: string, i: number) => (
-                          <span
-                            key={i}
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
-                          >
-                            {char}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Fun Facts */}
-                  {result.funFacts && (
-                    <div className="mt-4">
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">
-                        Fun Facts
-                      </h4>
-                      <ul className="list-disc list-inside text-gray-600">
-                        {result.funFacts.map((fact: string, i: number) => (
-                          <li key={i}>{fact}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
