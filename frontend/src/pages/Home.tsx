@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
 import axios from 'axios'
-import { CloudArrowUpIcon, XMarkIcon, InformationCircleIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { CloudArrowUpIcon, XMarkIcon, InformationCircleIcon, ShareIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
+import apiService from '../services/api'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 // Get API URL from environment variable with fallback for local development
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
@@ -84,6 +87,13 @@ const BREED_INFO: Record<string, BreedInfo> = {
   }
 }
 
+interface BreedOfTheDay {
+  name: string
+  description: string
+  imageUrl: string
+  funFact: string
+}
+
 function Home() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -96,6 +106,7 @@ function Home() {
   const [selectedBreed, setSelectedBreed] = useState<string | null>(null)
   const [showDeepAnalysis, setShowDeepAnalysis] = useState(false)
   const [showRetry, setShowRetry] = useState(false)
+  const [breedOfTheDay, setBreedOfTheDay] = useState<BreedOfTheDay | null>(null)
 
   // Helper function to generate report text
   const generateReport = () => {
@@ -345,242 +356,125 @@ Thank you for using Doggy Detective! 🐕
     )
   }
 
+  useEffect(() => {
+    const fetchBreedOfTheDay = async () => {
+      try {
+        const result = await apiService.getBreedOfTheDay()
+        setBreedOfTheDay(result)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch breed of the day')
+      }
+    }
+
+    fetchBreedOfTheDay()
+  }, [])
+
+  const features = [
+    {
+      title: 'Breed Comparison',
+      description: 'Compare different dog breeds to find the perfect match for you.',
+      icon: '🐕‍🦺',
+      path: '/compare'
+    },
+    {
+      title: 'Advanced Analysis',
+      description: 'Get detailed analysis of specific breeds and their characteristics.',
+      icon: '📊',
+      path: '/analysis'
+    },
+    {
+      title: 'Breed Mix Calculator',
+      description: 'Calculate the characteristics of mixed breed dogs.',
+      icon: '🧬',
+      path: '/mix'
+    },
+    {
+      title: 'Random Breed',
+      description: 'Discover a random dog breed and learn more about it.',
+      icon: '🎲',
+      path: '/random'
+    },
+    {
+      title: 'Guess the Breed',
+      description: 'Upload a photo and let our AI guess the dog breed.',
+      icon: '🔍',
+      path: '/guess'
+    }
+  ]
+
   return (
-    <div className="relative max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="text-center">
-        <div className="flex items-center justify-center space-x-2 mb-8">
-          <span className="text-4xl">🐕</span>
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-            Doggy Detective
-          </h1>
-          <span className="text-4xl">🔍</span>
-        </div>
-        <p className="text-xl text-gray-600 mb-12">
-          Upload a photo and I'll sniff out the breed! Woof! 🐾
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      {/* Hero Section */}
+      <div className="text-center mb-16">
+        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6">
+          Find Your Perfect Dog Breed 🐾
+        </h1>
+        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          Discover, compare, and learn about different dog breeds to find your ideal companion.
+          Our advanced tools help you make an informed decision.
         </p>
-        
-        {/* Platform Explanation */}
-        <div className="mb-12 text-left bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
-          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
-            Welcome to Doggy Detective! 🐕
-          </h2>
-          <div className="space-y-4 text-gray-700">
-            <p>
-              <strong>What is Doggy Detective?</strong> It's an AI-powered tool that helps you identify your dog's breed 
-              using advanced machine learning technology. Simply upload a clear photo of your dog, and our system will 
-              analyze it to determine the most likely breeds.
-            </p>
-            <p>
-              <strong>How does it work?</strong> We use a sophisticated MobileNetV2 neural network trained on thousands 
-              of dog images to identify breed characteristics. The system analyzes your dog's features and provides 
-              confidence scores for the most likely breeds.
-            </p>
-            <p>
-              <strong>How to use:</strong>
-            </p>
-            <ol className="list-decimal list-inside space-y-2">
-              <li>Click "Upload a photo" or drag and drop an image</li>
-              <li>Make sure the photo is clear and shows your dog's face</li>
-              <li>Click "What breed am I?" to start the analysis</li>
-              <li>View the results and learn more about each breed</li>
-            </ol>
-          </div>
-        </div>
+      </div>
 
-        {/* Upload Area or New Photo Button */}
-        {showUpload ? (
-          <div
-            onDrop={onDrop}
-            onDragOver={(e) => e.preventDefault()}
-            className="mt-4 flex justify-center px-6 pt-5 pb-6 border-3 border-dashed border-purple-300 rounded-2xl cursor-pointer hover:border-purple-400 transition-all transform hover:scale-105 bg-white/50 backdrop-blur-sm"
-          >
-            <div className="space-y-2 text-center">
-              <div className="flex justify-center">
-                <CloudArrowUpIcon className="h-12 w-12 text-purple-500" />
+      {/* Breed of the Day */}
+      <div className="mb-16">
+        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
+          Breed of the Day
+        </h2>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <LoadingSpinner size="lg" />
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 p-4 rounded-lg text-center">
+            <p className="text-red-700">{error}</p>
+          </div>
+        ) : breedOfTheDay ? (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+              <div className="relative h-64 md:h-full rounded-xl overflow-hidden">
+                <img
+                  src={breedOfTheDay.imageUrl}
+                  alt={breedOfTheDay.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <div className="flex text-sm">
-                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500">
-                  <span>Upload a photo</span>
-                  <input
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    className="sr-only"
-                    accept="image/*"
-                    onChange={(e) => e.target.files && handleFile(e.target.files[0])}
-                  />
-                </label>
-                <p className="pl-1">or drag and drop</p>
-              </div>
-              <p className="text-xs text-gray-500">Woof! I can handle PNG or JPG up to 10MB 🦴</p>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={resetUpload}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-          >
-            Try Another Photo 🐾
-          </button>
-        )}
-
-        {/* Preview and Analysis Section */}
-        {preview && (
-          <div className="mt-8">
-            <div className="relative inline-block">
-              <img
-                src={preview}
-                alt="Preview"
-                className="max-h-96 rounded-2xl shadow-xl"
-              />
-              <div className="absolute -bottom-3 -right-3 text-4xl animate-bounce">
-                🐕
-              </div>
-            </div>
-            
-            {/* Analysis Button - Positioned below the image */}
-            <div className="mt-6">
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="inline-flex items-center px-6 py-3 border border-transparent text-lg font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 transform transition-transform hover:scale-105"
-              >
-                {loading ? 'Sniffing... 🔍' : 'What breed am I? 🐾'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State with Fun Facts */}
-        {loading && (
-          <div className="mt-8 p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg animate-pulse">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce"></div>
-              <div className="w-3 h-3 bg-pink-600 rounded-full animate-bounce [animation-delay:-.3s]"></div>
-              <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce [animation-delay:-.5s]"></div>
-            </div>
-            <p className="text-gray-600 italic">{currentFact}</p>
-          </div>
-        )}
-
-        {/* Error Message with Retry Button */}
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-100">
-            <p className="text-red-600 mb-4">{error}</p>
-            {showRetry && (
-              <button
-                onClick={handleRetry}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Try Again 🐾
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Results with Share and Save Buttons */}
-        {results.length > 0 && (
-          <div className="mt-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                {resultMessage}
-              </h2>
-              <div className="space-x-2">
-                <button
-                  onClick={handleShare}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-purple-600 hover:text-purple-700 focus:outline-none"
-                  title="Share results"
-                >
-                  <ShareIcon className="h-5 w-5 mr-1" />
-                  Share
-                </button>
-                <button
-                  onClick={() => {
-                    const report = generateReport()
-                    const blob = new Blob([report], { type: 'text/plain' })
-                    const url = URL.createObjectURL(blob)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = 'dog-breed-report.txt'
-                    document.body.appendChild(a)
-                    a.click()
-                    document.body.removeChild(a)
-                    URL.revokeObjectURL(url)
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-purple-600 hover:text-purple-700 focus:outline-none"
-                  title="Save report"
-                >
-                  <svg className="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Save Report
-                </button>
-              </div>
-            </div>
-            
-            <div className="space-y-6">
-              {results.map((result, index) => (
-                <div key={index} className="transform transition-all hover:scale-105">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🐾'}</span>
-                      <div className="flex flex-col">
-                        <span className="text-lg font-medium text-gray-800">{result.breed}</span>
-                        <a
-                          href={`https://www.google.com/search?q=${encodeURIComponent(result.breed + ' dog breed')}&tbm=isch`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-purple-600 hover:text-purple-700"
-                        >
-                          View Breed Photos 🔍
-                        </a>
-                      </div>
-                      <button
-                        onClick={() => setSelectedBreed(result.breed)}
-                        className="ml-2 text-purple-600 hover:text-purple-700"
-                        title="Learn more about this breed"
-                      >
-                        <InformationCircleIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-48 h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                          style={{ width: `${result.confidence}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium text-gray-600">
-                        {result.confidence.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
+                    {breedOfTheDay.name}
+                  </h3>
+                  <p className="text-gray-600">{breedOfTheDay.description}</p>
                 </div>
-              ))}
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-semibold text-purple-700 mb-2">Fun Fact</h4>
+                  <p className="text-gray-700">{breedOfTheDay.funFact}</p>
+                </div>
+              </div>
             </div>
-
-            {/* Deep Analysis Button */}
-            {!showDeepAnalysis && (
-              <button
-                onClick={() => setShowDeepAnalysis(true)}
-                className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-              >
-                Show Deep Analysis 🔍
-              </button>
-            )}
           </div>
-        )}
+        ) : null}
+      </div>
 
-        {/* Deep Analysis Section */}
-        {showDeepAnalysis && <DeepAnalysis />}
-
-        {/* Breed Info Modal */}
-        {selectedBreed && (
-          <BreedInfoModal
-            breed={selectedBreed}
-            onClose={() => setSelectedBreed(null)}
-          />
-        )}
+      {/* Features Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {features.map((feature) => (
+          <Link
+            key={feature.title}
+            to={feature.path}
+            className="group bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow"
+          >
+            <div className="flex items-start space-x-4">
+              <span className="text-4xl">{feature.icon}</span>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2 group-hover:text-purple-600 transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+              <ArrowRightIcon className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors ml-auto" />
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   )

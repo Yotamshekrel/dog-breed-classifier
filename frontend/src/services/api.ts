@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 // Create axios instance with default config
 const api = axios.create({
@@ -41,22 +41,30 @@ export interface BreedResult {
 }
 
 export interface BreedAnalysis {
-  temperament: string
+  name: string
+  description: string
+  temperament: string[]
+  characteristics: {
+    size: string
+    lifespan: string
+    exercise: string
+    grooming: string
+  }
   health: {
-    score: number
-    concerns: string[]
+    commonIssues: string[]
+    considerations: string[]
   }
   training: {
-    score: number
+    difficulty: number
     tips: string[]
   }
   exercise: {
-    score: number
-    requirements: string
+    dailyNeeds: string
+    activities: string[]
   }
   grooming: {
-    score: number
-    needs: string[]
+    frequency: string
+    requirements: string[]
   }
 }
 
@@ -73,10 +81,20 @@ export interface BreedMix {
     name: string
     percentage: number
   }>
-  characteristics: string[]
-  temperament: string[]
-  health: string[]
-  care: string[]
+  characteristics: {
+    size: string
+    temperament: string[]
+    exercise: string
+    grooming: string
+  }
+  health: {
+    considerations: string[]
+  }
+  care: {
+    training: string[]
+    exercise: string[]
+    grooming: string[]
+  }
 }
 
 export interface TrainingTip {
@@ -89,13 +107,27 @@ export interface TrainingTip {
   commonMistakes: string[]
 }
 
+export interface BreedGuess {
+  breed: string
+  confidence: number
+  description: string
+  characteristics: string[]
+}
+
+export interface BreedOfTheDay {
+  name: string
+  description: string
+  imageUrl: string
+  funFact: string
+}
+
 // API functions
 export const apiService = {
   // Image Classification
   classifyImage: async (file: File): Promise<BreedResult[]> => {
     const formData = new FormData()
-    formData.append('image', file)
-    const response = await api.post<BreedResult[]>('/classify', formData, {
+    formData.append('file', file)
+    const response = await api.post<BreedResult[]>('/api/classify', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -105,51 +137,54 @@ export const apiService = {
 
   // Breed Analysis
   getBreedAnalysis: async (breed: string): Promise<BreedAnalysis> => {
-    const response = await api.get<BreedAnalysis>(`/breeds/${breed}/analysis`)
+    const response = await api.get<BreedAnalysis>(`/api/breeds/${breed}/analysis`)
     return response.data
   },
 
   // Breed Comparison
   compareBreeds: async (breed1: string, breed2: string): Promise<BreedComparison> => {
-    const response = await api.get<BreedComparison>(`/compare/${breed1}/${breed2}`)
+    const response = await api.get<BreedComparison>(`/api/breeds/compare`, {
+      params: { breed1, breed2 }
+    })
     return response.data
   },
 
   // Breed Mix Calculator
-  calculateBreedMix: async (breeds: Array<{ name: string; percentage: number }>): Promise<BreedMix> => {
-    const response = await api.post<BreedMix>('/mix', { breeds })
+  calculateMix: async (breeds: Array<{ name: string; percentage: number }>): Promise<BreedMix> => {
+    const response = await api.post<BreedMix>('/api/breeds/mix', { breeds })
     return response.data
   },
 
   // Training Tips
   getTrainingTips: async (breed: string): Promise<TrainingTip[]> => {
-    const response = await api.get<TrainingTip[]>(`/training/${breed}`)
+    const response = await api.get<TrainingTip[]>(`/api/training/${breed}`)
     return response.data
   },
 
   // Breed of Day
-  getBreedOfDay: async (): Promise<BreedResult> => {
-    const response = await api.get<BreedResult>('/breeds/breed-of-day')
+  getBreedOfTheDay: async (): Promise<BreedOfTheDay> => {
+    const response = await api.get<BreedOfTheDay>('/api/breeds/daily')
     return response.data
   },
 
   // Random Breed
-  getRandomBreed: async (): Promise<BreedResult> => {
-    const response = await api.get<BreedResult>('/breeds/random')
+  getRandomBreed: async (): Promise<BreedAnalysis> => {
+    const response = await api.get<BreedAnalysis>('/api/breeds/random')
     return response.data
   },
 
-  // Guess Breed Game
-  getBreedForGuessing: async (): Promise<{
-    image: string
-    hints: string[]
-  }> => {
-    const response = await api.get<{ image: string; hints: string[] }>('/guess-breed')
+  // Guess Breed
+  guessBreed: async (formData: FormData): Promise<BreedGuess> => {
+    const response = await api.post<BreedGuess>('/api/breeds/guess', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
     return response.data
   },
 
   checkBreedGuess: async (guess: string): Promise<{ correct: boolean; actualBreed: string }> => {
-    const response = await api.post<{ correct: boolean; actualBreed: string }>('/guess/check', { guess })
+    const response = await api.post<{ correct: boolean; actualBreed: string }>('/api/guess/check', { guess })
     return response.data
   },
 }

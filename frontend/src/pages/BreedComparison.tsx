@@ -1,20 +1,23 @@
 import { useState } from 'react'
 import { XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import apiService from '../services/api'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 interface BreedComparison {
   breed1: string
   breed2: string
   similarities: string[]
   differences: string[]
-  compatibility: number
+  compatibilityScore: number
 }
 
 function BreedComparison() {
   const [selectedBreeds, setSelectedBreeds] = useState<string[]>([])
   const [comparison, setComparison] = useState<BreedComparison | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock breed data - in a real app, this would come from an API
+  // Available breeds - in a real app, this would come from an API
   const availableBreeds = [
     'Labrador Retriever',
     'German Shepherd',
@@ -36,35 +39,25 @@ function BreedComparison() {
     }
   }
 
-  const compareBreeds = () => {
+  const compareBreeds = async () => {
     if (selectedBreeds.length !== 2) return
 
     setLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      const mockComparison: BreedComparison = {
-        breed1: selectedBreeds[0],
-        breed2: selectedBreeds[1],
-        similarities: [
-          'Both breeds are known for their intelligence',
-          'Both require regular exercise',
-          'Both are good with families'
-        ],
-        differences: [
-          `${selectedBreeds[0]} is generally larger than ${selectedBreeds[1]}`,
-          `${selectedBreeds[0]} requires more grooming than ${selectedBreeds[1]}`,
-          `${selectedBreeds[1]} is more suitable for apartment living`
-        ],
-        compatibility: Math.floor(Math.random() * 100)
-      }
-      setComparison(mockComparison)
+    setError(null)
+    try {
+      const result = await apiService.compareBreeds(selectedBreeds[0], selectedBreeds[1])
+      setComparison(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to compare breeds')
+    } finally {
       setLoading(false)
-    }, 1500)
+    }
   }
 
   const resetComparison = () => {
     setSelectedBreeds([])
     setComparison(null)
+    setError(null)
   }
 
   return (
@@ -105,8 +98,8 @@ function BreedComparison() {
           >
             {loading ? (
               <>
-                <ArrowPathIcon className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                Comparing...
+                <LoadingSpinner size="sm" />
+                <span className="ml-2">Comparing...</span>
               </>
             ) : (
               'Compare Breeds'
@@ -121,8 +114,15 @@ function BreedComparison() {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="mb-8 p-4 bg-red-50 rounded-lg">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
       {/* Comparison Results */}
-      {comparison && (
+      {comparison && !loading && (
         <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
@@ -171,7 +171,7 @@ function BreedComparison() {
               <div className="relative">
                 <div className="w-32 h-32 rounded-full border-8 border-gray-200 flex items-center justify-center">
                   <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                    {comparison.compatibility}%
+                    {comparison.compatibilityScore}%
                   </span>
                 </div>
                 <div
@@ -179,16 +179,16 @@ function BreedComparison() {
                   style={{
                     borderTopColor: '#9333ea',
                     borderRightColor: '#db2777',
-                    transform: `rotate(${(comparison.compatibility / 100) * 360}deg)`,
+                    transform: `rotate(${(comparison.compatibilityScore / 100) * 360}deg)`,
                     transition: 'transform 1s ease-in-out'
                   }}
                 />
               </div>
             </div>
             <p className="text-center mt-4 text-gray-600">
-              {comparison.compatibility >= 80
+              {comparison.compatibilityScore >= 80
                 ? 'Excellent compatibility! These breeds would make great companions.'
-                : comparison.compatibility >= 60
+                : comparison.compatibilityScore >= 60
                 ? 'Good compatibility! These breeds can work well together.'
                 : 'Moderate compatibility. Consider their individual needs carefully.'}
             </p>

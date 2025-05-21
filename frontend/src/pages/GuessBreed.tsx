@@ -1,29 +1,36 @@
-import { useState } from 'react'
-import { CloudArrowUpIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useState, useRef } from 'react'
+import { PhotoIcon } from '@heroicons/react/24/outline'
 import apiService from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 interface BreedGuess {
   breed: string
   confidence: number
+  description: string
   characteristics: string[]
-  funFacts: string[]
 }
 
 function GuessBreed() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
   const [guess, setGuess] = useState<BreedGuess | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
       setSelectedFile(file)
-      setPreviewUrl(URL.createObjectURL(file))
       setGuess(null)
       setError(null)
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -33,13 +40,10 @@ function GuessBreed() {
     setLoading(true)
     setError(null)
     try {
-      const result = await apiService.classifyImage(selectedFile)
-      setGuess({
-        breed: result[0].breed,
-        confidence: result[0].confidence,
-        characteristics: result[0].characteristics || [],
-        funFacts: result[0].funFacts || []
-      })
+      const formData = new FormData()
+      formData.append('image', selectedFile)
+      const result = await apiService.guessBreed(formData)
+      setGuess(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to guess breed')
     } finally {
@@ -49,71 +53,83 @@ function GuessBreed() {
 
   const resetGuess = () => {
     setSelectedFile(null)
-    setPreviewUrl(null)
+    setPreview(null)
     setGuess(null)
     setError(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
-          Guess the Breed 🎯
+          Guess the Breed 🐕
         </h1>
         <p className="text-xl text-gray-600">
-          Upload a dog photo and let our AI guess the breed
+          Upload a photo of a dog and let our AI guess its breed!
         </p>
       </div>
 
       {/* File Upload */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-8">
-        <div className="space-y-4">
+      <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg mb-8">
+        <div className="space-y-6">
           <div className="flex justify-center">
-            <label className="relative cursor-pointer bg-white rounded-lg shadow-md px-4 py-2 hover:bg-gray-50">
-              <span className="text-gray-700">Choose a photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </label>
+            <div className="w-full max-w-lg">
+              <label
+                htmlFor="photo-upload"
+                className="relative block w-full h-64 rounded-xl border-2 border-dashed border-gray-300 hover:border-purple-500 transition-colors cursor-pointer"
+              >
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <PhotoIcon className="h-12 w-12 text-gray-400" />
+                    <span className="mt-2 text-sm text-gray-600">
+                      Click to upload a photo
+                    </span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="sr-only"
+                />
+              </label>
+            </div>
           </div>
 
-          {previewUrl && (
-            <div className="mt-4">
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="mx-auto max-h-64 rounded-lg shadow-lg"
-              />
-            </div>
-          )}
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={handleGuess}
+              disabled={!selectedFile || loading}
+              className="inline-flex items-center px-6 py-3 border border-transparent text-lg font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  <span className="ml-2">Analyzing...</span>
+                </>
+              ) : (
+                'Guess Breed'
+              )}
+            </button>
+            <button
+              onClick={resetGuess}
+              className="inline-flex items-center px-6 py-3 border border-gray-300 text-lg font-medium rounded-full shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            >
+              Reset
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-center space-x-4 mb-8">
-        <button
-          onClick={handleGuess}
-          disabled={!selectedFile || loading}
-          className="inline-flex items-center px-6 py-3 border border-transparent text-lg font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
-        >
-          {loading ? (
-            <>
-              <LoadingSpinner size="sm" />
-              <span className="ml-2">Guessing...</span>
-            </>
-          ) : (
-            'Guess Breed'
-          )}
-        </button>
-        <button
-          onClick={resetGuess}
-          className="inline-flex items-center px-6 py-3 border border-gray-300 text-lg font-medium rounded-full shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-        >
-          Reset
-        </button>
       </div>
 
       {/* Error Message */}
@@ -125,44 +141,44 @@ function GuessBreed() {
 
       {/* Guess Results */}
       {guess && !loading && (
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">
-                {guess.breed}
-              </h2>
-              <div className="inline-block px-4 py-2 bg-purple-100 rounded-full">
-                <span className="text-purple-700 font-medium">
-                  {Math.round(guess.confidence * 100)}% Confidence
-                </span>
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg">
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-6">
+            Results
+          </h2>
+
+          <div className="space-y-6">
+            {/* Breed and Confidence */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">Breed</h3>
+                  <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                    {guess.breed}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <h3 className="text-xl font-semibold text-gray-800">Confidence</h3>
+                  <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                    {guess.confidence}%
+                  </p>
+                </div>
               </div>
             </div>
 
+            {/* Description */}
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">Description</h3>
+              <p className="text-gray-600">{guess.description}</p>
+            </div>
+
             {/* Characteristics */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Characteristics
-              </h3>
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">Characteristics</h3>
               <ul className="space-y-2">
                 {guess.characteristics.map((characteristic, index) => (
                   <li key={index} className="flex items-start">
                     <span className="text-purple-500 mr-2">•</span>
-                    <span className="text-gray-700">{characteristic}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Fun Facts */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                Fun Facts
-              </h3>
-              <ul className="space-y-2">
-                {guess.funFacts.map((fact, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-purple-500 mr-2">•</span>
-                    <span className="text-gray-700">{fact}</span>
+                    <span className="text-gray-600">{characteristic}</span>
                   </li>
                 ))}
               </ul>
